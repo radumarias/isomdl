@@ -7,7 +7,9 @@
 //!
 //! ## Simulated `Device` and `Reader` interaction
 //!
-//! Here are examples of how to use the library. You can see more in [examples](../examples) folder and read about in the dedicated [README](../examples/README.md).
+//! Here are examples of how to use the library.
+//! You can see more in `tests`
+//! folder and read about in the dedicated `tests/README.md).
 //!
 //! This example demonstrates a simulated device and reader interaction.  
 //! The reader requests the `age_over_21` element, and the device responds with that value.
@@ -179,12 +181,6 @@
 //! module (you can find the complete code in `examples` directory), here we focus on the code from the
 //! device perspective.
 //!
-//! #### Example
-//!
-//! ```ignore
-#![doc = include_str!("../tests/on_simulated_device.rs")]
-//! ```
-//!
 //! ### Reader perspective
 //!
 //! From the reader's perspective, the flow is simpler:
@@ -227,10 +223,20 @@
 //! reader's perspective.
 //! The code is considerably shorter.
 //!
-//! #### Example
+//! ## Example
+//!
+//! A basic example of the interaction.
 //!
 //! ```ignore
-#![doc = include_str!("../tests/on_simulated_reader.rs")]
+#![doc = include_str!("../tests/simulated_device_and_reader.rs")]
+//! ```
+//!
+//! ## Example
+//!
+//! And an example with `State` pattern, `Arc` and `Mutex`.
+//!
+//! ```ignore
+#![doc = include_str!("../tests/simulated_device_and_reader_state.rs")]
 //! ```
 pub use cose_rs;
 

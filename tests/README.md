@@ -1,6 +1,6 @@
 # isomdl integration tests
 
-Collection of integration tests that can be used as examples too of how you can use the library.
+Collection of integrations tests that can be used as examples too of how you can use the library.
 
 # Simulated device and reader interaction
 
@@ -108,5 +108,3 @@ There are several tests:
     - in a basic structure [simulated_device_and_reader](simulated_device_and_reader.rs)
     - more organized structure using `State` pattern, `Arc`
       and `Mutex` [simulated_device_and_reader_state](simulated_device_and_reader_state.rs)
-- on the device perspective [on_simulated_device](on_simulated_device.rs)
-- on the reader perspective [on_simulated_reader](on_simulated_reader.rs)
