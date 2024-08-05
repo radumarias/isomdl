@@ -4,13 +4,16 @@ use anyhow::{Context, Result};
 use signature::Signer;
 use uuid::Uuid;
 
-use common::*;
 use isomdl::definitions::device_engagement::{CentralClientMode, DeviceRetrievalMethods};
+use isomdl::definitions::device_request::{DataElements, DocType, Namespaces};
+use isomdl::definitions::helpers::NonEmptyMap;
 use isomdl::definitions::{self, BleOptions, DeviceRetrievalMethod};
-use isomdl::presentation::device::{Documents, RequestedItems};
-use isomdl::presentation::{device, reader};
+use isomdl::presentation::device::{Document, Documents, RequestedItems};
+use isomdl::presentation::{device, reader, Stringify};
 
-mod common;
+const DOC_TYPE: &str = "org.iso.18013.5.1.mDL";
+const NAMESPACE: &str = "org.iso.18013.5.1";
+const AGE_OVER_21_ELEMENT: &str = "age_over_21";
 
 struct SessionData {
     state: Arc<SessionManagerEngaged>,
@@ -29,20 +32,22 @@ struct SessionManager {
 
 struct SessionManagerEngaged(device::SessionManagerEngaged);
 
+fn main() {}
+
 #[test]
 pub fn simulated_device_and_reader_interaction() -> Result<()> {
+    let mdl_encoded = include_str!("data/stringified-mdl.txt");
     let key: Arc<p256::ecdsa::SigningKey> =
         Arc::new(p256::SecretKey::from_sec1_pem(include_str!("data/sec1.pem"))?.into());
 
     // Parse the mDL
-    let docs = Device::parse_mdl()?;
+    let docs = parse_mdl(mdl_encoded)?;
 
     // Device initialization and engagement
     let session_data = initialise_session(docs, Uuid::new_v4())?;
 
     // Reader processing QR and requesting the necessary fields
-    let (mut reader_session_manager, request) =
-        Device::establish_session(session_data.qr_code_uri)?;
+    let (mut reader_session_manager, request) = establish_reader_session(session_data.qr_code_uri)?;
 
     // Device accepting request
     let request_data = handle_request(
@@ -70,6 +75,13 @@ fn get_errors(session_manager: Arc<SessionManager>) -> Result<Option<Vec<u8>>> {
     sign_pending_and_retrieve_response(session_manager, None)
 }
 
+/// Parse the mDL encoded string into a [Documents] object.
+fn parse_mdl(encoded: &str) -> Result<NonEmptyMap<DocType, Document>> {
+    let mdl = Document::parse(encoded.to_string()).context("could not parse mDL")?;
+    let docs = Documents::new(DOC_TYPE.to_string(), mdl);
+    Ok(docs)
+}
+
 /// Creates a QR code containing `DeviceEngagement` data, which includes its public key.
 fn initialise_session(docs: Documents, uuid: Uuid) -> Result<SessionData> {
     let drms = DeviceRetrievalMethods::new(DeviceRetrievalMethod::BLE(BleOptions {
@@ -87,6 +99,18 @@ fn initialise_session(docs: Documents, uuid: Uuid) -> Result<SessionData> {
         state: Arc::new(SessionManagerEngaged(engaged_state)),
         qr_code_uri,
     })
+}
+
+/// Establishes the reader session from the given QR code and create request for needed elements.
+fn establish_reader_session(qr: String) -> Result<(reader::SessionManager, Vec<u8>)> {
+    let requested_elements = Namespaces::new(
+        NAMESPACE.into(),
+        DataElements::new(AGE_OVER_21_ELEMENT.to_string(), false),
+    );
+    let (reader_sm, session_request, _ble_ident) =
+        reader::SessionManager::establish_session(qr, requested_elements)
+            .context("failed to establish reader session")?;
+    Ok((reader_sm, session_request))
 }
 
 /// The Device handles the request from the reader and creates the `RequestData` context.
